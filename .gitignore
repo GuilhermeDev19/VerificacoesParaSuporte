@@ -1,0 +1,28 @@
+# Maven
+target/
+
+# IDEs
+.idea/
+.vscode/
+*.iml
+
+# Java
+*.class
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Arquivos sensíveis
+*.key
+*.pfx
+*.p12
+*.jks
+.env
+
+# Certificados/chaves gerados localmente
+*.crt
+*.csr

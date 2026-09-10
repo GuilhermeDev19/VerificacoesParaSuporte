@@ -1,0 +1,764 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tech Support Tools - Dark Creative</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #0b1120; color: #f8fafc; }
+        .card { background-color: #1e293b; border: 1px solid #334155; }
+        .input-dark { background-color: #0f172a; border: 1px solid #334155; color: #fff; }
+        .tab-btn.active { border-bottom: 2px solid #38bdf8; color: #38bdf8; font-weight: bold; }
+        .subtab-btn.active { background-color: #0284c7; color: #fff; }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-6xl mx-auto space-y-6">
+        <header class="pb-4 border-b border-slate-700">
+            <h1 class="text-2xl font-bold text-sky-400"><i class="fa-solid fa-globe mr-2"></i>Tech Support Tools</h1>
+            <p class="text-slate-400 text-sm">Painel Completo para DNS, SSL, SPF/DMARC, Portas SSL/TLS, Blacklists e Chamados</p>
+        </header>
+
+        <nav class="flex border-b border-slate-700 space-x-6 text-slate-400 text-sm overflow-x-auto pb-2">
+            <button class="tab-btn active py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('dns', event)"><i class="fa-solid fa-network-wired"></i> DNS Checker</button>
+            <button class="tab-btn py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('ssl', event)"><i class="fa-solid fa-shield-halved"></i> SSL & Tools</button>
+            <button class="tab-btn py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('spf', event)"><i class="fa-solid fa-envelope-circle-check"></i> SPF & DMARC Evaluator</button>
+            <button class="tab-btn py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('bounce', event)"><i class="fa-solid fa-terminal"></i> Cabeçalho & Bounce</button>
+            <button class="tab-btn py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('ports', event)"><i class="fa-solid fa-plug"></i> Testador de Portas & SMTP</button>
+            <button class="tab-btn py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('blacklists', event)"><i class="fa-solid fa-list-check"></i> Blacklists (RBL)</button>
+            <button class="tab-btn py-2 px-1 hover:text-sky-400 flex items-center gap-2" onclick="switchTab('templates', event)"><i class="fa-solid fa-file-lines"></i> Templates de Chamados</button>
+        </nav>
+
+        <!-- ABA DNS -->
+        <div id="tab-dns" class="tab-content space-y-6">
+            <div class="card p-4 rounded-xl flex flex-wrap gap-4 items-center">
+                <input type="text" id="domainInput" placeholder="digite o domínio (ex: darkcreative.com.br)" class="input-dark p-3 rounded-lg flex-1">
+                <select id="serverSelect" class="input-dark p-3 rounded-lg">
+                    <option value="default">Padrão do Sistema</option>
+                    <option value="8.8.8.8">Google (8.8.8.8)</option>
+                    <option value="1.1.1.1">Cloudflare (1.1.1.1)</option>
+                    <option value="200.201.160.2">Locaweb (200.201.160.2)</option>
+                </select>
+                <button onclick="consultarDNS()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg transition-all">
+                    <i class="fa-solid fa-magnifying-glass mr-2"></i>Consultar
+                </button>
+            </div>
+
+            <div id="ambienteCard" class="card p-4 rounded-xl hidden flex justify-between items-center border-l-4 border-sky-500">
+                <div>
+                    <span class="text-slate-400 text-xs uppercase tracking-wider block">Ambiente / Hospedagem Detectada</span>
+                    <span id="ambienteTexto" class="text-lg font-bold text-white">--</span>
+                </div>
+                <div class="text-right">
+                    <span class="text-slate-400 text-xs uppercase tracking-wider block">Cabeçalho Server</span>
+                    <code id="serverHeaderTexto" class="text-sky-300 text-sm">--</code>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="card p-5 rounded-xl space-y-4">
+                    <h2 class="text-lg font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-globe mr-2"></i>Web / Hospedagem</h2>
+                    <div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">A</span>
+                        <div id="listA" class="space-y-1"></div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">AAAA</span>
+                        <div id="listAAAA" class="space-y-1"></div>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-semibold block mb-1">CNAME</span>
+                        <div id="listCNAME" class="space-y-1"></div>
+                    </div>
+                </div>
+
+                <div class="card p-5 rounded-xl space-y-4">
+                    <h2 class="text-lg font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-server mr-2"></i>NameServers</h2>
+                    <div id="listNS" class="space-y-1"></div>
+                </div>
+
+                <div class="card p-5 rounded-xl space-y-4 md:col-span-2">
+                    <h2 class="text-lg font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-envelope mr-2"></i>E-mail (MX & TXT)</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <span class="text-xs text-slate-400 font-semibold block mb-1">MX</span>
+                            <div id="listMX" class="space-y-1"></div>
+                        </div>
+                        <div>
+                            <span class="text-xs text-slate-400 font-semibold block mb-1">TXT</span>
+                            <div id="listTXT" class="space-y-1"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA SSL E FERRAMENTAS -->
+        <div id="tab-ssl" class="tab-content hidden space-y-6">
+            <div class="flex space-x-2 bg-slate-900 p-1.5 rounded-lg border border-slate-800 w-fit text-sm">
+                <button class="subtab-btn active px-4 py-2 rounded-md transition-all" onclick="switchSubTab('ssl-check', event)"><i class="fa-solid fa-certificate mr-2"></i>Verificar SSL</button>
+                <button class="subtab-btn px-4 py-2 rounded-md transition-all text-slate-400" onclick="switchSubTab('ssl-csr', event)"><i class="fa-solid fa-key mr-2"></i>Gerador de CSR Online</button>
+                <button class="subtab-btn px-4 py-2 rounded-md transition-all text-slate-400" onclick="switchSubTab('ssl-pfx', event)"><i class="fa-solid fa-file-export mr-2"></i>Conversor / Leitor PFX</button>
+            </div>
+
+            <!-- SUBABA CHECK SSL -->
+            <div id="subtab-ssl-check" class="subtab-content space-y-4">
+                <div class="card p-4 rounded-xl flex gap-4">
+                    <input type="text" id="sslInput" placeholder="domínio para checar SSL (ex: darkcreative.com.br)" class="input-dark p-3 rounded-lg flex-1">
+                    <button onclick="checarSSL()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg">Verificar SSL</button>
+                </div>
+                <div id="sslResult" class="card p-5 rounded-xl hidden space-y-4"></div>
+            </div>
+
+            <!-- SUBABA GERADOR DE CSR ONLINE -->
+            <div id="subtab-ssl-csr" class="subtab-content hidden space-y-4">
+                <div class="card p-5 rounded-xl space-y-4">
+                    <h3 class="text-lg font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-file-signature mr-2"></i>Gerar CSR e Chave Privada Online</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">Nome do Domínio (Common Name)</label>
+                            <input type="text" id="csrCN" placeholder="ex: meudominio.com.br" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">Organização / Empresa</label>
+                            <input type="text" id="csrO" placeholder="ex: Minha Empresa LTDA" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">Departamento (OU)</label>
+                            <input type="text" id="csrOU" placeholder="ex: TI / Suporte" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">Cidade / Localidade (L)</label>
+                            <input type="text" id="csrL" placeholder="ex: Sao Paulo" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">Estado / Província (ST)</label>
+                            <input type="text" id="csrST" placeholder="ex: SP" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">País (C) - 2 Letras</label>
+                            <input type="text" id="csrC" value="BR" maxlength="2" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                    </div>
+                    <button onclick="gerarCSRServer()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-5 rounded-lg text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-gears"></i>Gerar CSR & Chave Privada
+                    </button>
+
+                    <div id="csrOutput" class="hidden space-y-4 pt-4 border-t border-slate-700">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-bold text-sky-400">Código CSR (Solicitação de Certificado):</span>
+                                <button onclick="copiarTexto('csrText')" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-white">Copiar CSR</button>
+                            </div>
+                            <textarea id="csrText" rows="6" class="input-dark w-full p-3 rounded font-mono text-xs" readonly></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-bold text-emerald-400">Chave Privada (Private Key - Mantenha em Segredo):</span>
+                                <button onclick="copiarTexto('keyText')" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-white">Copiar Key</button>
+                            </div>
+                            <textarea id="keyText" rows="6" class="input-dark w-full p-3 rounded font-mono text-xs" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SUBABA CONVERSOR E EXTRAÇÃO PFX -->
+            <div id="subtab-ssl-pfx" class="subtab-content hidden space-y-6">
+                <!-- CRIAR PFX -->
+                <div class="card p-5 rounded-xl space-y-4">
+                    <h3 class="text-lg font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-file-export mr-2"></i>Converter Certificado (.CRT) + Chave (.KEY) para PFX</h3>
+                    <form id="formCreatePfx" onsubmit="gerarEBaixarPfx(event)" class="space-y-4 text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-400 text-xs mb-1">Arquivo do Certificado (.crt / .pem / .cer)</label>
+                                <input type="file" id="pfxCrtFile" required class="input-dark w-full p-2 rounded text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-xs mb-1">Arquivo da Chave Privada (.key / .pem)</label>
+                                <input type="file" id="pfxKeyFile" required class="input-dark w-full p-2 rounded text-xs">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-slate-400 text-xs mb-1">Senha de Proteção para o arquivo PFX</label>
+                            <input type="password" id="pfxPassword" placeholder="Defina uma senha" class="input-dark w-full p-2.5 rounded">
+                        </div>
+                        <button type="submit" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-lg text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-download"></i>Converter e Baixar .PFX
+                        </button>
+                    </form>
+                </div>
+
+                <!-- EXTRAIR PFX -->
+                <div class="card p-5 rounded-xl space-y-4">
+                    <h3 class="text-lg font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-unlock-keyhole mr-2"></i>Extrair CRT e KEY de um Arquivo PFX</h3>
+                    <form id="formExtractPfx" onsubmit="extrairPfx(event)" class="space-y-4 text-sm">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-slate-400 text-xs mb-1">Arquivo PFX (.pfx / .p12)</label>
+                                <input type="file" id="extractPfxFile" required class="input-dark w-full p-2 rounded text-xs">
+                            </div>
+                            <div>
+                                <label class="block text-slate-400 text-xs mb-1">Senha do Arquivo PFX</label>
+                                <input type="password" id="extractPfxPassword" placeholder="Digite a senha do PFX" class="input-dark w-full p-2.5 rounded">
+                            </div>
+                        </div>
+                        <button type="submit" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2.5 px-5 rounded-lg text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-key"></i>Extrair Certificado & Chave
+                        </button>
+                    </form>
+
+                    <div id="pfxExtractResult" class="hidden space-y-4 pt-4 border-t border-slate-700">
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-bold text-sky-400">Certificado Extraído (.crt):</span>
+                                <button onclick="copiarTexto('outCrt')" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-white">Copiar CRT</button>
+                            </div>
+                            <textarea id="outCrt" rows="6" class="input-dark w-full p-3 rounded font-mono text-xs" readonly></textarea>
+                        </div>
+                        <div>
+                            <div class="flex justify-between items-center mb-1">
+                                <span class="text-xs font-bold text-emerald-400">Chave Privada Extraída (.key):</span>
+                                <button onclick="copiarTexto('outKey')" class="text-xs bg-slate-700 hover:bg-slate-600 px-2.5 py-1 rounded text-white">Copiar Key</button>
+                            </div>
+                            <textarea id="outKey" rows="6" class="input-dark w-full p-3 rounded font-mono text-xs" readonly></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ABA SPF/DMARC -->
+        <div id="tab-spf" class="tab-content hidden space-y-4">
+            <div class="card p-4 rounded-xl flex gap-4">
+                <input type="text" id="spfInput" placeholder="domínio para avaliar SPF/DMARC" class="input-dark p-3 rounded-lg flex-1">
+                <button onclick="checarSPF()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg">Avaliar</button>
+            </div>
+            <div id="spfResult" class="card p-5 rounded-xl hidden space-y-6"></div>
+        </div>
+
+        <!-- ABA BOUNCE -->
+        <div id="tab-bounce" class="tab-content hidden space-y-4">
+            <div class="card p-4 rounded-xl space-y-3">
+                <textarea id="bounceInput" rows="6" placeholder="Cole o cabeçalho completo ou mensagem de bounce..." class="input-dark w-full p-3 rounded-lg font-mono text-sm"></textarea>
+                <button onclick="analisarBounce()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg">Analisar Erro & Cabeçalho</button>
+            </div>
+            <div id="bounceResult" class="card p-5 rounded-xl hidden space-y-4"></div>
+        </div>
+
+        <!-- ABA PORTAS / SMTP -->
+        <div id="tab-ports" class="tab-content hidden space-y-4">
+            <div class="card p-4 rounded-xl flex gap-4">
+                <input type="text" id="portInput" placeholder="host ou IP para testar portas" class="input-dark p-3 rounded-lg flex-1">
+                <button onclick="testarPortas()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg">Testar Conectividade</button>
+            </div>
+            <div id="portResult" class="card p-5 rounded-xl hidden"></div>
+        </div>
+
+        <!-- ABA BLACKLISTS -->
+        <div id="tab-blacklists" class="tab-content hidden space-y-4">
+            <div class="card p-4 rounded-xl flex gap-4">
+                <input type="text" id="rblInput" placeholder="digite o IP ou host do servidor (ex: 179.188.55.48)" class="input-dark p-3 rounded-lg flex-1">
+                <button onclick="checarBlacklist()" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-3 px-6 rounded-lg">Consultar RBL</button>
+            </div>
+            <div id="rblResult" class="card p-5 rounded-xl hidden space-y-4"></div>
+        </div>
+
+        <!-- ABA TEMPLATES -->
+        <div id="tab-templates" class="tab-content hidden space-y-4">
+            <div class="bg-amber-950/60 border border-amber-600/60 p-4 rounded-xl flex items-center gap-3">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xl"></i>
+                <p class="text-amber-200 text-sm"><strong>OBS:</strong> Lembre-se de substituir <code class="bg-amber-900 px-2 py-0.5 rounded font-bold">Nome_Do_Analista</code> pelas suas credenciais antes do envio ao cliente.</p>
+            </div>
+
+            <div class="grid grid-cols-1 gap-6">
+                <div class="card p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <h3 class="font-bold text-sky-400"><i class="fa-solid fa-ticket mr-2"></i>Abertura de INC ou RITM</h3>
+                        <button onclick="copiarTexto('tpl1')" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-1.5 rounded transition-all text-white"><i class="fa-regular fa-copy mr-1"></i>Copiar</button>
+                    </div>
+                    <textarea id="tpl1" rows="10" class="input-dark w-full p-3 rounded-lg font-mono text-xs" readonly>Olá, Boa tarde/noite!
+
+Analisando o caso relatado, foi necessário a abertura de uma solicitação interna.
+
+Pedimos que aguarde novas interações neste chamado, qualquer update ou atualização será informada aqui.
+
+Mantenha seus dados atualizados para facilitar um contato direto:
+https://ajuda.locaweb.com.br/wiki/alterar-dados-cadastrais-e-de-cobranca/
+
+Atenciosamente, Nome_Do_Analista Suporte Locaweb.</textarea>
+                </div>
+
+                <div class="card p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <h3 class="font-bold text-sky-400"><i class="fa-solid fa-folder-plus mr-2"></i>Abertura de Chamado</h3>
+                        <button onclick="copiarTexto('tpl2')" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-1.5 rounded transition-all text-white"><i class="fa-regular fa-copy mr-1"></i>Copiar</button>
+                    </div>
+                    <textarea id="tpl2" rows="10" class="input-dark w-full p-3 rounded-lg font-mono text-xs" readonly>Olá, Boa Tarde/Noite!
+
+Conforme nosso contato via chat, você informou que, 
+
+Dessa forma, estou abrindo este chamado para que a equipe responsável possa analisar.
+
+Mantenha seus dados atualizados para facilitar um contato direto:
+https://ajuda.locaweb.com.br/wiki/alterar-dados-cadastrais-e-de-cobranca/
+
+Atenciosamente, Nome_Do_Analista Suporte Locaweb.</textarea>
+                </div>
+
+                <div class="card p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center border-b border-slate-700 pb-2">
+                        <h3 class="font-bold text-emerald-400"><i class="fa-solid fa-circle-check mr-2"></i>Chamado Resolvido</h3>
+                        <button onclick="copiarTexto('tpl3')" class="bg-slate-700 hover:bg-slate-600 text-xs px-3 py-1.5 rounded transition-all text-white"><i class="fa-regular fa-copy mr-1"></i>Copiar</button>
+                    </div>
+                    <textarea id="tpl3" rows="10" class="input-dark w-full p-3 rounded-lg font-mono text-xs" readonly>Olá, Boa tarde/noite!
+
+Foram realizados os devidos ajustes, xxxxxxx
+
+Se você considera que o assunto desta solicitação foi resolvido, por favor avalie o chamado.
+
+Atenciosamente, Nome_Do_Analista Suporte Locaweb.</textarea>
+                </div>
+            </div>
+        </div>
+
+        <footer class="text-center text-slate-500 text-xs pt-4 border-t border-slate-800">
+            Dark Creative © Tech Tools
+        </footer>
+    </div>
+
+    <script>
+        function switchTab(tabId, evt) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) activeTab.classList.remove('hidden');
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+            }
+        }
+
+        function switchSubTab(subTabId, evt) {
+            document.querySelectorAll('.subtab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.subtab-btn').forEach(el => {
+                el.classList.remove('active');
+                el.classList.add('text-slate-400');
+            });
+            
+            const activeSub = document.getElementById(`subtab-${subTabId}`);
+            if (activeSub) activeSub.classList.remove('hidden');
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+                evt.currentTarget.classList.remove('text-slate-400');
+            }
+        }
+
+        async function consultarDNS() {
+            const dominio = document.getElementById('domainInput').value.trim();
+            const server = document.getElementById('serverSelect').value;
+            if (!dominio) return alert('Por favor, informe o domínio.');
+
+            try {
+                const res = await fetch(`/api/dns?dominio=${encodeURIComponent(dominio)}&server=${encodeURIComponent(server)}`);
+                if (!res.ok) throw new Error('Falha na resposta do servidor');
+                const data = await res.json();
+
+                if (data.ambienteDetectado) {
+                    document.getElementById('ambienteCard').classList.remove('hidden');
+                    document.getElementById('ambienteTexto').textContent = data.ambienteDetectado;
+                    document.getElementById('serverHeaderTexto').textContent = data.serverHeader || 'N/A';
+                }
+
+                renderLista('listA', data.registrosA);
+                renderLista('listAAAA', data.registrosAaaa);
+                renderLista('listCNAME', data.registrosCname);
+                renderLista('listMX', data.registrosMx);
+                renderLista('listTXT', data.registrosTxt);
+                renderLista('listNS', data.registrosNs);
+            } catch (err) {
+                alert('Erro ao consultar DNS: ' + err.message);
+            }
+        }
+
+        async function checarSSL() {
+            const dominio = document.getElementById('sslInput').value.trim();
+            if (!dominio) return alert('Informe o domínio.');
+            const resEl = document.getElementById('sslResult');
+            resEl.classList.remove('hidden');
+            resEl.innerHTML = '<span class="text-slate-400 animate-pulse">Inspecionando certificado e cadeia SSL...</span>';
+
+            try {
+                const res = await fetch(`/api/ssl/inspect?dominio=${encodeURIComponent(dominio)}`);
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+                const data = await res.json();
+
+                const domInfo = data.sujeito || data.dominio || data.domain || (data.cadeia && data.cadeia[0] ? data.cadeia[0].subject : '--');
+                const emissorInfo = data.emissor || data.issuer || (data.cadeia && data.cadeia[0] ? data.cadeia[0].issuer : '--');
+                const validadeInfo = data.validadeAte || data.validUntil || data.validade || '--';
+
+                let html = `<div class="flex items-center gap-2 text-lg font-bold ${data.valido ? 'text-emerald-400' : 'text-red-400'} border-b border-slate-700 pb-3">
+                    <i class="fa-solid ${data.valido ? 'fa-circle-check' : 'fa-circle-xmark'}"></i>
+                    ${data.valido ? 'Certificado Instalado e Válido' : 'Certificado Com Problemas / Inválido'}
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div><strong>Domínio:</strong> ${domInfo}</div>
+                    <div><strong>Emissor:</strong> ${emissorInfo}</div>
+                    <div><strong>Válido Até:</strong> ${validadeInfo}</div>
+                    <div><strong>Dias Restantes:</strong> <span class="font-bold text-sky-400">${data.diasRestantes !== undefined ? data.diasRestantes : '--'}</span></div>
+                </div>`;
+
+                if (data.cadeia && Array.isArray(data.cadeia) && data.cadeia.length > 0) {
+                    html += `<div class="mt-4 border-t border-slate-700 pt-3">
+                        <h4 class="font-bold text-slate-300 text-sm mb-2"><i class="fa-solid fa-link mr-2"></i>Cadeia de Certificação (Chain):</h4>
+                        <div class="space-y-2">`;
+                    data.cadeia.forEach((cert, idx) => {
+                        html += `<div class="bg-slate-900 p-3 rounded border border-slate-800 text-xs">
+                            <span class="text-sky-400 font-bold block mb-1">Nível ${idx + 1}: ${cert.subject || cert.cn || 'Certificado'}</span>
+                            <span class="text-slate-400 block">Emissor: ${cert.issuer || cert.emissor || 'N/A'}</span>
+                            <span class="text-slate-400 block">Validade: ${cert.validade || cert.validadeAte || 'N/A'}</span>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                }
+
+                if (data.erro) html += `<div class="p-3 bg-red-950/60 border border-red-800 text-red-300 rounded text-sm mt-3"><strong>Erro:</strong> ${data.erro}</div>`;
+
+                resEl.innerHTML = html;
+            } catch (e) {
+                resEl.innerHTML = `<span class="text-red-400">Erro na consulta SSL: ${e.message}</span>`;
+            }
+        }
+
+        async function gerarCSRServer() {
+            const domain = document.getElementById('csrCN').value.trim();
+            if (!domain) return alert('Informe o nome do domínio.');
+
+            const payload = {
+                domain: domain,
+                organization: document.getElementById('csrO').value.trim(),
+                department: document.getElementById('csrOU').value.trim(),
+                city: document.getElementById('csrL').value.trim(),
+                state: document.getElementById('csrST').value.trim(),
+                country: document.getElementById('csrC').value.trim()
+            };
+
+            try {
+                const res = await fetch('/api/ssl/generate-csr', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (data.erro) throw new Error(data.erro);
+
+                document.getElementById('csrText').value = data.csr || '';
+                document.getElementById('keyText').value = data.key || '';
+                document.getElementById('csrOutput').classList.remove('hidden');
+            } catch (e) {
+                alert('Erro ao gerar CSR: ' + e.message);
+            }
+        }
+
+        async function gerarEBaixarPfx(e) {
+            e.preventDefault();
+            const crtFile = document.getElementById('pfxCrtFile').files[0];
+            const keyFile = document.getElementById('pfxKeyFile').files[0];
+            const password = document.getElementById('pfxPassword').value;
+
+            if (!crtFile || !keyFile) return alert('Selecione os arquivos .crt e .key');
+
+            const formData = new FormData();
+            formData.append('crtFile', crtFile);
+            formData.append('keyFile', keyFile);
+            formData.append('password', password);
+
+            try {
+                const res = await fetch('/api/ssl/convert-pfx', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.erro || 'Falha ao converter PFX');
+                }
+
+                const blob = await res.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'certificado.pfx';
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+            } catch (err) {
+                alert('Erro ao gerar PFX: ' + err.message);
+            }
+        }
+
+        async function extrairPfx(e) {
+            e.preventDefault();
+            const pfxFile = document.getElementById('extractPfxFile').files[0];
+            const password = document.getElementById('extractPfxPassword').value;
+
+            if (!pfxFile) return alert('Selecione o arquivo .pfx');
+
+            const formData = new FormData();
+            formData.append('pfxFile', pfxFile);
+            formData.append('password', password);
+
+            try {
+                const res = await fetch('/api/ssl/extract-pfx', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (!res.ok || data.erro) throw new Error(data.erro || 'Falha ao extrair PFX');
+
+                document.getElementById('outCrt').value = data.crt || '';
+                document.getElementById('outKey').value = data.key || '';
+                document.getElementById('pfxExtractResult').classList.remove('hidden');
+            } catch (err) {
+                alert('Erro ao extrair PFX: ' + err.message);
+            }
+        }
+
+        async function checarSPF() {
+            const dominio = document.getElementById('spfInput').value.trim();
+            if (!dominio) return alert('Informe o domínio.');
+            const resEl = document.getElementById('spfResult');
+            resEl.classList.remove('hidden');
+            resEl.innerHTML = '<span class="text-slate-400 animate-pulse">Avaliando SPF e DMARC...</span>';
+
+            try {
+                const res = await fetch(`/api/auth-eval/check?dominio=${encodeURIComponent(dominio)}`);
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+                const data = await res.json();
+
+                let html = `<div class="space-y-4">
+                    <div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700 space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                            <span class="font-bold text-sky-400"><i class="fa-solid fa-envelope-circle-check mr-2"></i>Registro SPF</span>
+                            <span class="text-xs px-2 py-0.5 rounded font-bold ${data.spf?.encontrado ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">
+                                ${data.spf?.encontrado ? 'Encontrado' : 'Não Encontrado'}
+                            </span>
+                        </div>
+                        <div class="text-xs font-mono bg-slate-950 p-2 rounded text-slate-300 break-all">${data.spf?.raw || 'N/A'}</div>
+                        ${data.spf?.encontrado ? `<div class="text-xs text-slate-400">Sintaxe: <strong class="text-emerald-400">Válida</strong> | DNS Lookups: <strong class="${data.spf.lookupValido ? 'text-emerald-400' : 'text-red-400'}">${data.spf.dnsLookups} / 10</strong></div>` : ''}`;
+
+                if (data.spf?.avisos && data.spf.avisos.length > 0) {
+                    html += `<div class="space-y-1 pt-1">`;
+                    data.spf.avisos.forEach(aviso => {
+                        html += `<div class="text-xs text-amber-300 bg-amber-950/40 border border-amber-800/60 p-2 rounded"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${aviso}</div>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div>`;
+
+                html += `<div class="bg-slate-900/80 p-4 rounded-lg border border-slate-700 space-y-2">
+                        <div class="flex items-center justify-between border-b border-slate-700 pb-2">
+                            <span class="font-bold text-sky-400"><i class="fa-solid fa-shield-cat mr-2"></i>Registro DMARC</span>
+                            <span class="text-xs px-2 py-0.5 rounded font-bold ${data.dmarc?.encontrado ? 'bg-emerald-950 text-emerald-400 border border-emerald-800' : 'bg-red-950 text-red-400 border border-red-800'}">
+                                ${data.dmarc?.encontrado ? 'Encontrado' : 'Não Encontrado'}
+                            </span>
+                        </div>
+                        <div class="text-xs font-mono bg-slate-950 p-2 rounded text-slate-300 break-all">${data.dmarc?.raw || 'N/A'}</div>
+                        ${data.dmarc?.politica ? `<div class="text-xs text-slate-400">Política Ativa: <strong class="text-sky-300">${data.dmarc.politica}</strong></div>` : ''}`;
+
+                if (data.dmarc?.avisos && data.dmarc.avisos.length > 0) {
+                    html += `<div class="space-y-1 pt-1">`;
+                    data.dmarc.avisos.forEach(aviso => {
+                        html += `<div class="text-xs text-amber-300 bg-amber-950/40 border border-amber-800/60 p-2 rounded"><i class="fa-solid fa-triangle-exclamation mr-1"></i>${aviso}</div>`;
+                    });
+                    html += `</div>`;
+                }
+                html += `</div></div>`;
+
+                resEl.innerHTML = html;
+            } catch (e) {
+                resEl.innerHTML = `<span class="text-red-400">Erro na consulta SPF/DMARC: ${e.message}</span>`;
+            }
+        }
+
+        async function analisarBounce() {
+            const rawHeader = document.getElementById('bounceInput').value.trim();
+            if (!rawHeader) return alert('Cole o cabeçalho ou bounce.');
+            const resEl = document.getElementById('bounceResult');
+            resEl.classList.remove('hidden');
+            resEl.innerHTML = '<span class="text-slate-400 animate-pulse">Analisando dados do cabeçalho...</span>';
+
+            try {
+                const res = await fetch(`/api/header/analyze`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ header: rawHeader })
+                });
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+                const data = await res.json();
+
+                const remetenteEmail = data.fromEmail || 'Não identificado';
+                const remetenteRaw = data.fromRaw || 'Não identificado';
+                const destinatarioEmail = data.toEmail || 'Não identificado';
+                const dataEnvio = data.dateSent || 'Não identificada';
+                const msgId = data.messageId || 'Não identificado';
+
+                let html = `<h3 class="text-base font-bold text-sky-400 border-b border-slate-700 pb-2"><i class="fa-solid fa-envelope-open-text mr-2"></i>Análise de Cabeçalho</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div class="bg-slate-900 p-3 rounded border border-slate-800 space-y-1">
+                        <span class="text-xs text-slate-400 font-semibold block">De (From) - E-mail Real:</span>
+                        <span class="text-sky-300 font-mono font-bold block">${remetenteEmail}</span>
+                        <span class="text-slate-500 text-xs block">Nome/Bruto: ${remetenteRaw}</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded border border-slate-800 space-y-1">
+                        <span class="text-xs text-slate-400 font-semibold block">Para (To):</span>
+                        <span class="text-sky-300 font-mono font-bold block">${destinatarioEmail}</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded border border-slate-800">
+                        <span class="text-xs text-slate-400 font-semibold block">Data do Envio:</span>
+                        <span class="text-slate-200 font-mono">${dataEnvio}</span>
+                    </div>
+                    <div class="bg-slate-900 p-3 rounded border border-slate-800">
+                        <span class="text-xs text-slate-400 font-semibold block">Message-ID:</span>
+                        <span class="text-slate-200 font-mono text-xs break-all">${msgId}</span>
+                    </div>
+                </div>`;
+
+                const bounceDiag = data.bounce?.diagnosticCode;
+                if (bounceDiag) {
+                    html += `<div class="bg-red-950/60 border border-red-800 p-4 rounded-lg space-y-2">
+                        <h4 class="font-bold text-red-400 text-sm flex items-center gap-2"><i class="fa-solid fa-triangle-exclamation"></i> Diagnóstico de Bounce / Motivo da Falha:</h4>
+                        <p class="text-xs font-mono text-red-200">${bounceDiag}</p>
+                    </div>`;
+                }
+
+                resEl.innerHTML = html;
+            } catch (e) {
+                resEl.innerHTML = `<span class="text-red-400">Erro na análise: ${e.message}</span>`;
+            }
+        }
+
+        async function testarPortas() {
+            const host = document.getElementById('portInput').value.trim();
+            if (!host) return alert('Informe o host ou IP.');
+            const resEl = document.getElementById('portResult');
+            resEl.classList.remove('hidden');
+            resEl.innerHTML = '<span class="text-slate-400 animate-pulse">Testando conectividade de portas...</span>';
+
+            try {
+                const res = await fetch(`/api/ports/scan?host=${encodeURIComponent(host)}`);
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+                const data = await res.json();
+
+                let html = `<div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900 text-slate-400 text-xs uppercase border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Porta</th>
+                                <th class="p-3">Serviço</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Latência / Erro</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">`;
+
+                data.forEach(item => {
+                    const statusBadge = item.aberta 
+                        ? `<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Aberta</span>`
+                        : `<span class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded text-xs font-bold"><i class="fa-solid fa-xmark mr-1"></i>Fechada</span>`;
+
+                    const info = item.aberta 
+                        ? `${item.latenciaMs} ms` 
+                        : `<span class="text-slate-500">${item.erro || 'Timeout'}</span>`;
+
+                    html += `<tr class="hover:bg-slate-800/50">
+                        <td class="p-3 font-mono font-bold text-sky-300">${item.porta}</td>
+                        <td class="p-3 text-slate-200">${item.servico}</td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 text-xs">${info}</td>
+                    </tr>`;
+                });
+
+                html += `</tbody></table></div>`;
+                resEl.innerHTML = html;
+            } catch (e) {
+                resEl.innerHTML = `<span class="text-red-400">Erro no scan de portas: ${e.message}</span>`;
+            }
+        }
+
+        async function checarBlacklist() {
+            const target = document.getElementById('rblInput').value.trim();
+            if (!target) return alert('Informe o IP ou Host.');
+            const resEl = document.getElementById('rblResult');
+            resEl.classList.remove('hidden');
+            resEl.innerHTML = '<span class="text-slate-400 animate-pulse">Consultando blacklists (RBL)...</span>';
+
+            try {
+                const res = await fetch(`/api/blacklist/check?target=${encodeURIComponent(target)}`);
+                if (!res.ok) throw new Error(`Status ${res.status}`);
+                const data = await res.json();
+                
+                let list = Array.isArray(data) ? data : (data.results || data.blacklists || [data]);
+
+                let html = `<div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-900 text-slate-400 text-xs uppercase border-b border-slate-700">
+                            <tr>
+                                <th class="p-3">Servidor RBL</th>
+                                <th class="p-3">Status</th>
+                                <th class="p-3">Detalhes</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">`;
+
+                if (Array.isArray(list) && list.length > 0) {
+                    list.forEach(item => {
+                        const rblHost = item.rbl || item.server || item.name || 'RBL Server';
+                        const isListed = item.listed || item.listado || false;
+                        
+                        const statusBadge = isListed
+                            ? `<span class="bg-red-950 text-red-400 border border-red-800 px-2 py-1 rounded text-xs font-bold"><i class="fa-solid fa-triangle-exclamation mr-1"></i>Listado</span>`
+                            : `<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 px-2 py-1 rounded text-xs font-bold"><i class="fa-solid fa-check mr-1"></i>Limpo</span>`;
+
+                        let rawDetail = item.response || item.detalhes || (isListed ? 'IP encontrado em blacklist' : 'Sem listagem');
+                        let detailsStr = (typeof rawDetail === 'object') ? JSON.stringify(rawDetail) : String(rawDetail);
+
+                        html += `<tr class="hover:bg-slate-800/50">
+                            <td class="p-3 font-mono text-sky-300 font-bold">${rblHost}</td>
+                            <td class="p-3">${statusBadge}</td>
+                            <td class="p-3 text-xs text-slate-300">${detailsStr}</td>
+                        </tr>`;
+                    });
+                } else {
+                    html += `<tr><td colspan="3" class="p-4 text-center text-slate-400">Nenhum dado retornado</td></tr>`;
+                }
+
+                html += `</tbody></table></div>`;
+                resEl.innerHTML = html;
+            } catch (e) {
+                resEl.innerHTML = `<span class="text-red-400">Erro na consulta RBL: ${e.message}</span>`;
+            }
+        }
+
+        function copiarTexto(id) {
+            const text = document.getElementById(id).value;
+            navigator.clipboard.writeText(text).then(() => {
+                alert('Conteúdo copiado!');
+            });
+        }
+
+        function renderLista(elementId, itens) {
+            const el = document.getElementById(elementId);
+            if (!itens || itens.length === 0) {
+                el.innerHTML = '<span class="text-slate-500 text-sm italic">Nenhum registro encontrado</span>';
+                return;
+            }
+            el.innerHTML = itens.map(item => `<div class="bg-slate-900/60 p-2 rounded border border-slate-800 text-sm font-mono text-slate-200">${item}</div>`).join('');
+        }
+    </script>
+</body>
+</html>
