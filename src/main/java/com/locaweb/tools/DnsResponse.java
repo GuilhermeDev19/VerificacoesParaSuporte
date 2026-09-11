@@ -27,33 +27,123 @@ public class DnsResponse {
 
     private String ambienteDetectado;
     private String serverHeader;
+    private String poweredByHeader;
+    private String servidorWeb;
+    private String versaoServidorWeb;
+    private String versaoPhp;
+    private String sistemaOperacional;
 
     public DnsResponse() {}
 
-    public String getDomain() { return domain; }
-    public void setDomain(String domain) { this.domain = domain; }
+    public String getDomain() {
+        return domain;
+    }
 
-    public List<String> getaRecords() { return aRecords; }
-    public void setaRecords(List<String> aRecords) { this.aRecords = aRecords; }
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
 
-    public List<String> getAaaaRecords() { return aaaaRecords; }
-    public void setAaaaRecords(List<String> aaaaRecords) { this.aaaaRecords = aaaaRecords; }
+    public List<String> getaRecords() {
+        return aRecords;
+    }
 
-    public List<String> getCnameRecords() { return cnameRecords; }
-    public void setCnameRecords(List<String> cnameRecords) { this.cnameRecords = cnameRecords; }
+    public void setaRecords(List<String> aRecords) {
+        this.aRecords = aRecords;
+    }
 
-    public List<String> getMxRecords() { return mxRecords; }
-    public void setMxRecords(List<String> mxRecords) { this.mxRecords = mxRecords; }
+    public List<String> getAaaaRecords() {
+        return aaaaRecords;
+    }
 
-    public List<String> getTxtRecords() { return txtRecords; }
-    public void setTxtRecords(List<String> txtRecords) { this.txtRecords = txtRecords; }
+    public void setAaaaRecords(List<String> aaaaRecords) {
+        this.aaaaRecords = aaaaRecords;
+    }
 
-    public List<String> getNsRecords() { return nsRecords; }
-    public void setNsRecords(List<String> nsRecords) { this.nsRecords = nsRecords; }
+    public List<String> getCnameRecords() {
+        return cnameRecords;
+    }
 
-    public String getAmbienteDetectado() { return ambienteDetectado; }
-    public void setAmbienteDetectado(String ambienteDetectado) { this.ambienteDetectado = ambienteDetectado; }
+    public void setCnameRecords(List<String> cnameRecords) {
+        this.cnameRecords = cnameRecords;
+    }
 
-    public String getServerHeader() { return serverHeader; }
-    public void setServerHeader(String serverHeader) { this.serverHeader = serverHeader; }
+    public List<String> getMxRecords() {
+        return mxRecords;
+    }
+
+    public void setMxRecords(List<String> mxRecords) {
+        this.mxRecords = mxRecords;
+    }
+
+    public List<String> getTxtRecords() {
+        return txtRecords;
+    }
+
+    public void setTxtRecords(List<String> txtRecords) {
+        this.txtRecords = txtRecords;
+    }
+
+    public List<String> getNsRecords() {
+        return nsRecords;
+    }
+
+    public void setNsRecords(List<String> nsRecords) {
+        this.nsRecords = nsRecords;
+    }
+
+    public String getAmbienteDetectado() {
+        return ambienteDetectado;
+    }
+
+    public void setAmbienteDetectado(String ambienteDetectado) {
+        this.ambienteDetectado = ambienteDetectado;
+    }
+
+    public String getServerHeader() {
+        return serverHeader;
+    }
+
+    public void setServerHeader(String serverHeader) {
+        this.serverHeader = serverHeader;
+    }
+
+    public String getPoweredByHeader() {
+        return poweredByHeader;
+    }
+
+    public void setPoweredByHeader(String poweredByHeader) {
+        this.poweredByHeader = poweredByHeader;
+    }
+
+    public String getServidorWeb() {
+        return servidorWeb;
+    }
+
+    public void setServidorWeb(String servidorWeb) {
+        this.servidorWeb = servidorWeb;
+    }
+
+    public String getVersaoServidorWeb() {
+        return versaoServidorWeb;
+    }
+
+    public void setVersaoServidorWeb(String versaoServidorWeb) {
+        this.versaoServidorWeb = versaoServidorWeb;
+    }
+
+    public String getVersaoPhp() {
+        return versaoPhp;
+    }
+
+    public void setVersaoPhp(String versaoPhp) {
+        this.versaoPhp = versaoPhp;
+    }
+
+    public String getSistemaOperacional() {
+        return sistemaOperacional;
+    }
+
+    public void setSistemaOperacional(String sistemaOperacional) {
+        this.sistemaOperacional = sistemaOperacional;
+    }
 }
