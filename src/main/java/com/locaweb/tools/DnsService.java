@@ -191,7 +191,7 @@ public class DnsService {
 
         // Apache
         Matcher apacheMatcher = Pattern
-                .compile("(?i)\\bapache(?:/|\\s+)([0-9][0-9a-zA-Z.\\-]*)")
+                .compile("(?i)\\bapache(?:[/\\s]+([0-9][0-9a-zA-Z.\\-]*))?")
                 .matcher(server);
 
         if (apacheMatcher.find()) {
@@ -345,8 +345,7 @@ public class DnsService {
 
         // 6. Se temos servidor, mas não conseguimos mapear hospedagem
         if (info.servidorWeb != null) {
-            return "Servidor não identificado"
-                    + montarDetalhes(info);
+            return "Hospedagem não identificada";
         }
 
         return "Indeterminado / Desconhecido";
